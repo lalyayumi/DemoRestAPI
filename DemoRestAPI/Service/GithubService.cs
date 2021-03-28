@@ -1,9 +1,11 @@
 ﻿using DemoRestAPI.Models;
+using DemoRestAPI.Utils;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -39,7 +41,7 @@ namespace DemoRestAPI.Service
             }
             catch (Exception ex)
             {
-                return new GitHubProfile();
+                throw  new HttpStatusCodeException(HttpStatusCode.InternalServerError, ex.ToString()); 
             }
             return result;
 
@@ -59,7 +61,7 @@ namespace DemoRestAPI.Service
             }
             catch (Exception ex)
             {
-                return new List<GitHubRepos>();
+                throw new HttpStatusCodeException(HttpStatusCode.InternalServerError, ex.ToString());
             }
             return result;
         }
@@ -73,34 +75,15 @@ namespace DemoRestAPI.Service
             {
                 var profile = await GetProfile();
                 var repos = await GetRepos();
-                if(profile!=null)
-                {
-                    result.name = profile.login;
-                    result.url_git = profile.url;
-                    result.number_repositories = profile.public_repos;
-                    result.location = profile.location;
-                    result.created_at = profile.created_at;
-                    result.updated_at = profile.updated_at;
-                }
-                if (repos.Count()>0)
-                {
-
-                    foreach(var repo in repos)
-                    {
-                        GitHubRepoStats repoStat = new GitHubRepoStats();
-                        repoStat.name = repo.name;
-                        repoStat.url_repository = repo.html_url;
-                        repoStat.created_at = repo.created_at;
-                        repoStat.updated_at = repo.updated_at;
-                        result.repos.Add(repoStat);
-                    }
-                }
+                result = Mapping.MappToStats(profile, repos);
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new HttpStatusCodeException(HttpStatusCode.InternalServerError, ex.ToString());
             }
             return result;
         }
+
+        
     }
 }
