@@ -14,6 +14,7 @@ namespace DemoRestAPI.Service
     {
         Task<GitHubProfile> GetProfile();
         Task<IEnumerable<GitHubRepos>> GetRepos();
+        Task<GitHubStats> GetStatsForReact();
     }
     public class GithubService : IGithubService
     {
@@ -26,9 +27,9 @@ namespace DemoRestAPI.Service
         }
         public async Task<GitHubProfile> GetProfile()
         {
-            GitHubProfile result = new  GitHubProfile();
+            GitHubProfile result = new GitHubProfile();
             var uri = _config["GitHub:GithubProfileUri"];
-         
+
             try
             {
                 var response = await _httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
@@ -36,12 +37,12 @@ namespace DemoRestAPI.Service
                 var data = await response.Content.ReadAsStringAsync();
                 result = JsonConvert.DeserializeObject<GitHubProfile>(data);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new GitHubProfile();
             }
             return result;
-           
+
         }
 
         public async Task<IEnumerable<GitHubRepos>> GetRepos()
@@ -59,6 +60,45 @@ namespace DemoRestAPI.Service
             catch (Exception ex)
             {
                 return new List<GitHubRepos>();
+            }
+            return result;
+        }
+
+        public async Task<GitHubStats> GetStatsForReact()
+        {
+            GitHubStats result = new GitHubStats();
+            var uri = _config["GitHub:GithubReposUri"];
+
+            try
+            {
+                var profile = await GetProfile();
+                var repos = await GetRepos();
+                if(profile!=null)
+                {
+                    result.name = profile.login;
+                    result.url_git = profile.url;
+                    result.number_repositories = profile.public_repos;
+                    result.location = profile.location;
+                    result.created_at = profile.created_at;
+                    result.updated_at = profile.updated_at;
+                }
+                if (repos.Count()>0)
+                {
+
+                    foreach(var repo in repos)
+                    {
+                        GitHubRepoStats repoStat = new GitHubRepoStats();
+                        repoStat.name = repo.name;
+                        repoStat.url_repository = repo.html_url;
+                        repoStat.created_at = repo.created_at;
+                        repoStat.updated_at = repo.updated_at;
+                        result.repos.Add(repoStat);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
             return result;
         }

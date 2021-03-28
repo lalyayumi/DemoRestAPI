@@ -58,5 +58,23 @@ namespace DemoRestAPI.Controllers
 
 
         }
+
+        [HttpGet]
+        [Route("gitstats")]
+        public async Task<IActionResult> GetStatsForReact()
+        {
+           GitHubStats result = new GitHubStats();
+            try
+            {
+                result = await _gitHubService.GetStatsForReact();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                throw new Utils.HttpStatusCodeException(HttpStatusCode.InternalServerError, ex.ToString());
+            }
+
+
+        }
     }
 }
